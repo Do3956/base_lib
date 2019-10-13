@@ -1,5 +1,4 @@
 from eventManager import register, ClassEventManager
-from threadPool import thread_pool
 
 
 @register(ClassEventManager)
@@ -8,9 +7,8 @@ class Hero:
         self.hp = 10
         self.name = name
 
-    def fight(self, person):
-        pass
-        # print(f"{self.name} fight {person.name}")
+    def fight(self, defender):
+        print(f"{self.name} fight {defender.name}")
 
     def is_dead(self):
         return self.hp <= 0
@@ -38,10 +36,9 @@ class FightBox:
         attacker = self.leftHero
         defender = self.rightHero
         while not self.__fish():
-            t_fight = thread_pool.workers.submit(attacker.fight, defender)
-            t_fight.result()
-            t_hurt = thread_pool.workers.submit(defender.hurt)
-            t_hurt.result()
+            t_fight = ClassEventManager().call_event(
+                True, attacker, 'fight', defender)
+            t_hurt = ClassEventManager().call_event(True, defender, 'hurt')
             attacker, defender = self.__swap(attacker, defender)
         print(f'winner is {defender.name}')
 

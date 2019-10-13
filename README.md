@@ -1,4 +1,4 @@
 # base_lib
 
 ## how to excute
-python event
+python event.py
