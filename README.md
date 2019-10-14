@@ -1,4 +1,4 @@
 # base_lib
 
 ## how to excute
-python msgHandle/event.py 
+python eventHandle/main.py

@@ -4,11 +4,14 @@ from singleton import Singleton
 from threadPool import thread_pool
 
 
+# @singleton
 class EventManager(Singleton):
     """
     """
 
     def __init__(self):
+        super(EventManager, self).__init__()
+        print('222222')
         self._lock = threading.Lock()
         self._events = {}
 
@@ -19,6 +22,7 @@ class EventManager(Singleton):
         if self._exist_event(event_name):
             raise Exception(f"event {event_name} Already exists")
         self._events[event_name] = event
+        print('_add_event', self._events)
 
     def _remove_event(self, event_name):
         if self._exist_event(event_name):
@@ -36,6 +40,7 @@ class EventManager(Singleton):
             if not callable(event):
                 raise Exception(f"{event_name} not callable!")
             self._add_event(event_name, event)
+            print('register', self._events)
 
     def unregister(self, event):
         """Remove a event from the service."""
@@ -61,6 +66,8 @@ class ClassEventManager(EventManager):
     def _get_event_names(self, event):
         class_name = self._get_event_name(event)
         function_names = self._get_class_functions(event)
+        print('class_name', class_name)
+        print('function_names', function_names)
         return map(lambda x: f'{class_name}.{x}', function_names)
 
     def register(self, event):
@@ -69,6 +76,7 @@ class ClassEventManager(EventManager):
                 raise Exception(f"{event_name} not callable!")
 
             for event_name in self._get_event_names(event):
+                print('event_name', event_name)
                 self._add_event(event_name, event)
 
     def unregister(self, event):
@@ -93,7 +101,10 @@ def register(event_manager):
     """
     """
     def deco(cls):
+        print('event_manager', event_manager)
+        print('event_manager', event_manager())
         event_manager().register(cls)
+        print(event_manager()._events)
         return cls
     return deco
 
