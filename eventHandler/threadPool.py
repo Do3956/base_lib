@@ -8,4 +8,4 @@ class ThreadPool(Singleton):
         self.workers = ThreadPoolExecutor(max_workers=max_workers)
 
 
-thread_pool = ThreadPool(2)
+thread_pool = ThreadPool(3)

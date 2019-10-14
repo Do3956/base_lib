@@ -7,7 +7,7 @@ from singleton import Singleton
 
 class Engine(Singleton):
     __handlers = defaultdict(list)  # 事件处理字典{'func_name': [func1, func2]}
-    workers = thread_pool.workers
+    __workers = thread_pool.workers
 
     @classmethod
     def register(cls, msg_name: str, handler):
@@ -21,7 +21,7 @@ class Engine(Singleton):
     def send_message(cls, msg_name: str, *args, **kw):
         """ 发送消息 """
         for event in cls.__handlers[msg_name]:
-            cls.workers.submit(event().execute, *args, **kw)
+            cls.__workers.submit(event().execute, *args, **kw)
 
 
 engine = Engine()

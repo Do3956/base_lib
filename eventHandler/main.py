@@ -10,9 +10,11 @@ def main():
 
     engine.send_message('JobSleep')
     engine.send_message('JobSleep')
+    engine.send_message('JobSleep')
     engine.send_message('JobPrint')
     engine.send_message('JobPrint')
     engine.send_message('JobPrint')
+    engine.send_message('JobSleep')
     engine.send_message('JobSleep')
 
 
