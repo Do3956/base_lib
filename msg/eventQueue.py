@@ -8,6 +8,7 @@ class _WorkItem(object):
         self.cls_instance = cls_instance
         self.args = args
         self.kwargs = kwargs
+        self.execute_ts = time.time() + self.cls_instance.delay
 
     def execute(self):
         print('_WorkItem...execute', self.cls_instance, self.args, self.kwargs)
@@ -23,6 +24,8 @@ class EventQueue(Queue):
     """
 
     def __init__(self, max_size=10000):
+        if not isinstance(max_size, (int)):
+            raise AttributeError('max_size error, must be int')
         super(EventQueue, self).__init__(max_size)
         self.cond_has_event = threading.Condition()
 

@@ -11,10 +11,11 @@ class BaseConsumerFactory():
         self.consumers[CONSUMER_TYPE_EVENT] = EventConsumer
         self.consumers[CONSUMER_TYPE_EVENT_DELAY] = EventConsumerDelay
 
-    def get_consumer(self, consumer_type):
-        return self._consumer(consumer_type)
+    def run_consumer(self, consumer_type, *args, **kw):
+        consumer = self._get_consumer(consumer_type)
+        consumer(*args, **kw)
 
-    def _consumer(self, consumer_type):
+    def _get_consumer(self, consumer_type):
         consumer = self.consumers[consumer_type]
         if not issubclass(consumer, Consumer):
             raise AttributeError(f'{consumer} must be Consumer\'s instance')

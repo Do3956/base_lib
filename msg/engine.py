@@ -14,7 +14,7 @@ from consumerFactory import ConsumerFactory
 class EventEngine:
     """事件引擎"""
 
-    def __init__(self, queue_max_size=10000, max_thread=2, consumer_type=CONSUMER_TYPE_EVENT_DELAY):
+    def __init__(self, queue_max_size=10000, max_thread=2, consumer_type=CONSUMER_TYPE_EVENT):
         """
         初始事件引擎
         1. _event_queue: 待处理的事件Queue
@@ -24,7 +24,7 @@ class EventEngine:
         self._queue = EventQueue(queue_max_size)
         print('_event_queue')
         self._handlers = defaultdict(list)
-        ConsumerFactory().get_consumer(consumer_type)(self._queue, max_thread)
+        ConsumerFactory().run_consumer(consumer_type, self._queue, max_thread)
 
     def _exist_handler(self, event_name, handler):
         if handler in self._handlers[event_name]:
