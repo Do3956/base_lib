@@ -33,6 +33,9 @@ class EventEngine:
         """事件发送"""
         self.__notify(event_name, delay, *args, **kwargs)
 
+    def clean_register(self):
+        self.__handlers = {}
+
     def __exist_event(self, event_name):
         if self.__handlers.get(event_name):
             return True
