@@ -1,6 +1,7 @@
 import abc
 import time
 
+
 class BaseHandler(metaclass=abc.ABCMeta):
     """事件基类"""
 
@@ -9,36 +10,53 @@ class BaseHandler(metaclass=abc.ABCMeta):
             raise AttributeError('delay error, must be gte 0.0')
         self.delay = delay
 
-    def _prepare(self, *args, **kw):
-        if self.delay > 0:
-            time.sleep(self.delay)
-
-    def execute(self, *args, **kw):
-        """执行"""
-        self._prepare(*args, **kw)
-        self._execute(*args, **kw)
-
     @abc.abstractmethod
-    def _execute(self, *args, **kw) -> None:
-        """受保护的执行"""
+    def execute(self, *args, **kwargs):
+        """执行"""
+        pass
 
 
 class ReaderHandler(BaseHandler):
 
-    def __read_book(self, book_name):
+    def __read_book(self, *args, **kwargs):
+        book_name = kwargs.get('book_name')
+        if not book_name:
+            return
         print(f"{time.time()}, 正在看书:<<{book_name}>>")
 
-    def _execute(self, book_name):
-        self.__read_book(book_name)
+    def execute(self, *args, **kwargs):
+        self.__read_book(*args, **kwargs)
+
+    def callback(self, *args, **kwargs):
+        print(f'{time.time()}, ReaderHandler.callback, args:{args}, kwargs:{kwargs}')
 
 
 class AuthorHandler(BaseHandler):
 
-    def __write_book(self, book_name):
+    def __write_book(self, *args, **kwargs):
+        book_name = kwargs.get('book_name')
+        if not book_name:
+            return
         print(f'{time.time()}, <<{book_name}>>书籍出版')
 
-    def _execute(self, book_name):
-        self.__write_book(book_name)
+    def execute(self, *args, **kwargs):
+        self.__write_book(*args, **kwargs)
+
+    def callback(self, *args, **kwargs):
+        print(f'{time.time()}, AuthorHandler.callback, args:{args}, kwargs:{kwargs}')
+
+
+class SleepHandler(BaseHandler):
+
+    def __sleep(self, *args, **kwargs):
+        second = kwargs.get('second')
+        if not isinstance(second, (int, float)) or second <= 0.0:
+            return
+        time.sleep(second)
+        print(f"{time.time()}, 休息{second}秒")
+
+    def execute(self, *args, **kwargs):
+        self.__sleep(*args, **kwargs)
 
 
 if __name__ == "__main__":

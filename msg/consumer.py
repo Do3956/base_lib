@@ -1,80 +1,93 @@
-from concurrent.futures import ThreadPoolExecutor
+from threadManager import ThreadManager
 from queue import Empty
 import time
 import threading
 import abc
-import atexit
+import traceback
 
 from eventQueue import EventQueue
+
 
 class Consumer:
     def __init__(self, _queue, max_workers=10):
         if not issubclass(_queue.__class__, EventQueue):
             raise AttributeError('max_workers error, must be int')
-        if not isinstance(max_workers, (int)):
-            raise AttributeError('max_workers error, must be int')
-        self.thread_pool = ThreadPoolExecutor(max_workers=max_workers)
+        self.thread_pool_executor = ThreadManager(
+            max_workers=max_workers).executor
         self._queue = _queue
         self._active = False
-        self._start()
-        atexit.register(self._python_exit)
 
-    def _start(self):
+    def __get_job(self):
+        return self._queue.get_nowait()
+
+    def __recover_job(self, job):
+        self._queue.put_nowait(job)
+
+    def __get_job_num(self):
+        return self._queue.qsize()
+
+    def __get_single(self):
+        return self._queue.cond_has_event
+
+    def __wait_single(self, second):
+        print('__wait_single', second)
+        self._queue.cond_has_event.wait(second)
+
+    def start(self):
         """
         """
-        print('_start')
-        _main_thread = threading.Thread(target=self._consume)
+        print('start')
+        _main_thread = threading.Thread(target=self._run_event_loop)
         if self._active:
             return
         self._active = True
         _main_thread.start()
         print('start finish')
 
-    def _consume(self):
+    def _run_event_loop(self):
         """事件队列消费"""
-        print('_consume')
+        print('_run_event_loop')
         while self._active:
             print('self._active')
-            with self._queue.cond_has_event:
-                print('cond_has_event')
-                try:
-                    _item = self._queue.get_nowait()
-                    print('_item', _item)
-                    self._execute(_item)
-                except Empty:
-                    print('Empty')
-                    self._queue.cond_has_event.wait()
+            with self.__get_single():
+                second = self._consume()
+                self.__wait_single(second)
+
+    def __min_second(self, a, b):
+        if a is None:
+            return b
+        if b is None:
+            return a
+        return min(a, b)
+
+    def _consume(self) -> any:
+        """
+        return: wait timeout: None/int
+        """
+        wait_second = None
+        for _ in range(self.__get_job_num()):
+            job = self.__get_job()
+            if job.can_execute():
+                self._execute(job)
+            else:
+                self.__recover_job(job)
+                wait_second = self.__min_second(job.need_wait_second(), wait_second)
+        print('_consume', wait_second)
+        return wait_second
 
     @abc.abstractmethod
-    def _execute(self, _item: 'eventQueue._WorkItem') -> None:
+    def _execute(self, _item: 'eventQueue.HandlePackage') -> None:
         """事件执行"""
-        print('_execute', _item.cls_instance.delay)
+        # print('_execute', _item.cls_instance.delay)
         self._throw_to_thread_pool(_item)
 
-    def _throw_to_thread_pool(self, _item: 'eventQueue._WorkItem'):
-        print('throw_to_thread_pool')
-        self.thread_pool.submit(_item.execute)
-
-    def _python_exit(self):
-        self._active = False
-        print('_python_exit')
-        # items = list(_threads_queues.items())
-        # for t, q in items:
-        #     q.put(None)
-        # for t, q in items:
-        #     t.join()
+    def _throw_to_thread_pool(self, _item: 'eventQueue.HandlePackage'):
+        # print('throw_to_thread_pool')
+        self.thread_pool_executor.submit(_item.execute)
 
 
 class EventConsumer(Consumer):
-    def _execute(self, _item: 'eventQueue._WorkItem'):
+    def _execute(self, _item: 'eventQueue.HandlePackage'):
         """事件执行"""
-        print('_execute', _item.cls_instance.delay)
+        # print('_execute', _item.cls_instance.delay)
         self._throw_to_thread_pool(_item)
-
-class EventConsumerDelay(Consumer):
-    def _execute(self, _item: 'eventQueue._WorkItem'):
-        pass
-
-
-
-

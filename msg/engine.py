@@ -6,54 +6,59 @@ from decorator import singleton
 from collections import defaultdict
 from handler import BaseHandler
 from consumer import EventConsumer
-from const import CONSUMER_TYPE_EVENT
-from const import CONSUMER_TYPE_EVENT_DELAY
-from consumerFactory import ConsumerFactory
 
 @singleton
 class EventEngine:
-    """事件引擎"""
+    """
+    事件引擎
+    单例 init 不要加各种参数
+    """
 
-    def __init__(self, queue_max_size=10000, max_thread=2, consumer_type=CONSUMER_TYPE_EVENT):
+    def __init__(self):
         """
         初始事件引擎
         1. _event_queue: 待处理的事件Queue
         2. _handlers: 事件对应的处理器, 需提前注册
         """
         print('EventEngine')
-        self._queue = EventQueue(queue_max_size)
-        print('_event_queue')
-        self._handlers = defaultdict(list)
-        ConsumerFactory().run_consumer(consumer_type, self._queue, max_thread)
+        self.__queue = EventQueue(10000)
+        self.__handlers = {}
+        EventConsumer(self.__queue, 2).start()
 
-    def _exist_handler(self, event_name, handler):
-        if handler in self._handlers[event_name]:
+    def register(self, event_name, *handlers) -> None:
+        """事件注册"""
+        print(type(handlers), handlers)
+        self.__add_handlers(event_name, handlers)
+
+    def send(self, event_name: str, delay=0, *args, **kwargs) -> None:
+        """事件发送"""
+        self.__notify(event_name, delay, *args, **kwargs)
+
+    def __exist_event(self, event_name):
+        if self.__handlers.get(event_name):
             return True
         return False
 
-    def _check_handler(self, handler: 'BaseHandler()'):
+    def __check_handler(self, handler: 'BaseHandler()'):
         if not issubclass(handler.__class__, BaseHandler):
             raise Exception(f'{handler} is not from BaseHandler')
 
-    def _add_handler(self, event_name:str, handler):
-        self._check_handler(handler)
-        if self._exist_handler(event_name, handler):
-            raise Exception(f'handler:{handler} exist')
+    def __check_handlers(self, handlers: 'BaseHandler()'):
+        for handler in handlers:
+            self.__check_handler(handler)
 
-        self._handlers[event_name].append(handler)
+    def __add_handlers(self, event_name: str, handlers:list):
+        self.__check_handlers(handlers)
+        if self.__exist_event(event_name):
+            raise Exception(f'event_name:{event_name} exist')
 
-    def _get_handler(self, event_name):
-        return self._handlers[event_name]
+        self.__handlers[event_name] = handlers
 
-    def register(self, event_name, handler) -> None:
-        """事件注册"""
-        self._add_handler(event_name, handler)
+    def __get_handler(self, event_name):
+        return self.__handlers[event_name]
 
-    def send(self, event_name: str, *args, **kw) -> None:
-        """事件发送"""
-        self._notify(event_name, *args, **kw)
-
-    def _notify(self, event_name, *args, **kw):
-        if not self._get_handler(event_name):
+    def __notify(self, event_name, delay, *args, **kwargs):
+        if not self.__get_handler(event_name):
             return
-        self._queue.accept(self._get_handler(event_name), *args, **kw)
+        self.__queue.add(self.__get_handler(event_name),
+                        delay, *args, **kwargs)
