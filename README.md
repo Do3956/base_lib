@@ -7,7 +7,11 @@ python3.6
 ## how to excute
 python msg/main.py
 
+## test
+pytest test
 
+
+## text
 生产者
 消费者
 

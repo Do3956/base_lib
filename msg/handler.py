@@ -4,16 +4,13 @@ import time
 
 class BaseHandler(metaclass=abc.ABCMeta):
     """事件基类"""
-
-    def __init__(self, delay=0):
-        if not isinstance(delay, (int, float)) or delay < 0.0:
-            raise AttributeError('delay error, must be gte 0.0')
-        self.delay = delay
+    def __init__(self, *args, **kwargs):
+        self._execute_time = None
 
     @abc.abstractmethod
     def execute(self, *args, **kwargs):
         """执行"""
-        pass
+        self._execute_time = time.time()
 
 
 class ReaderHandler(BaseHandler):
@@ -25,6 +22,7 @@ class ReaderHandler(BaseHandler):
         print(f"{time.time()}, 正在看书:<<{book_name}>>")
 
     def execute(self, *args, **kwargs):
+        super().execute(*args, **kwargs)
         self.__read_book(*args, **kwargs)
 
     def callback(self, *args, **kwargs):
@@ -40,6 +38,7 @@ class AuthorHandler(BaseHandler):
         print(f'{time.time()}, <<{book_name}>>书籍出版')
 
     def execute(self, *args, **kwargs):
+        super().execute(*args, **kwargs)
         self.__write_book(*args, **kwargs)
 
     def callback(self, *args, **kwargs):
@@ -56,6 +55,7 @@ class SleepHandler(BaseHandler):
         print(f"{time.time()}, 休息{second}秒")
 
     def execute(self, *args, **kwargs):
+        super().execute(*args, **kwargs)
         self.__sleep(*args, **kwargs)
 
 

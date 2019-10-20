@@ -12,17 +12,18 @@ class HandlePackage(object):
         self.create_time = time.time()
 
     def can_execute(self):
-        return time.time() - self.create_time > self.delay
+        return time.time() - self.create_time >= self.delay
 
     def need_wait_second(self):
-        return self.delay - (time.time() - self.create_time)
+        wait_second = self.delay - (time.time() - self.create_time)
+        return wait_second if wait_second > 0 else 0
 
     def execute(self):
-        print('HandlePackage...execute', self.cls_instance, self.args, self.kwargs)
+        print('HandlePackage...execute',
+              self.cls_instance, self.args, self.kwargs)
         result = self.cls_instance.execute(*self.args, **self.kwargs)
         if hasattr(self.cls_instance, 'callback'):
             self.cls_instance.callback(result, *self.args, **self.kwargs)
-
 
 
 class EventQueue(Queue):
@@ -50,9 +51,6 @@ class EventQueue(Queue):
 
     def _add_handlers(self, handlers, delay, *args, **kwargs):
         for handler in handlers:
-            _item = self._package_hander(handler, delay, *args, **kwargs)
-            # print('_add_handlers', _item.execute, _item.cls_instance.delay)
-            self.put_nowait(_item)
-
-
-
+            _job = self._package_hander(handler, delay, *args, **kwargs)
+            # print('_add_handlers', _job.execute, _job.cls_instance.delay)
+            self.put_nowait(_job)

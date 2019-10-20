@@ -1,17 +1,17 @@
-from threadManager import ThreadManager
+from msg.thread_manager import ThreadManager
 from queue import Empty
 import time
 import threading
 import abc
 import traceback
 
-from eventQueue import EventQueue
+from msg.event_queue import EventQueue
 
 
 class Consumer:
     def __init__(self, _queue, max_workers=10):
         if not issubclass(_queue.__class__, EventQueue):
-            raise AttributeError('max_workers error, must be int')
+            raise AttributeError(f'{_queue} is not from EventQueue')
         self.thread_pool_executor = ThreadManager(
             max_workers=max_workers).executor
         self._queue = _queue
@@ -71,23 +71,24 @@ class Consumer:
                 self._execute(job)
             else:
                 self.__recover_job(job)
-                wait_second = self.__min_second(job.need_wait_second(), wait_second)
-        print('_consume', wait_second)
-        return wait_second
+                return job.need_wait_second()
+        #         wait_second = self._min_second(job.need_wait_second(), wait_second)
+        # print('_consume', wait_second)
+        # return wait_second
 
     @abc.abstractmethod
-    def _execute(self, _item: 'eventQueue.HandlePackage') -> None:
+    def _execute(self, _job: 'eventQueue.HandlePackage') -> None:
         """事件执行"""
-        # print('_execute', _item.cls_instance.delay)
-        self._throw_to_thread_pool(_item)
+        # print('_execute', _job.cls_instance.delay)
+        self._throw_to_thread_pool(_job)
 
-    def _throw_to_thread_pool(self, _item: 'eventQueue.HandlePackage'):
+    def _throw_to_thread_pool(self, _job: 'eventQueue.HandlePackage'):
         # print('throw_to_thread_pool')
-        self.thread_pool_executor.submit(_item.execute)
+        self.thread_pool_executor.submit(_job.execute)
 
 
 class EventConsumer(Consumer):
-    def _execute(self, _item: 'eventQueue.HandlePackage'):
+    def _execute(self, _job: 'eventQueue.HandlePackage'):
         """事件执行"""
-        # print('_execute', _item.cls_instance.delay)
-        self._throw_to_thread_pool(_item)
+        # print('_execute', _job.cls_instance.delay)
+        self._throw_to_thread_pool(_job)
